@@ -13,7 +13,7 @@
  * Output Modes
  */
 #define O_WRITE        1
-#define O_APPEND       2
+#define O_APPND        2
 #define O_PIPE         3 
 
 /*

@@ -1,14 +1,28 @@
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <string.h>
 #include <stdarg.h>
+#include <fcntl.h>
 
 #include "command.h"
 #include "operators.h"
 
-#define verbose(...) if(ISVERBOSE) printf(__VA_ARGS__); fflush(stdout)
-static bool ISVERBOSE = false;
+#define verbose(...) if(IS_VERBOSE) fprintf(stderr, __VA_ARGS__); fflush(stdout)
+static bool IS_VERBOSE = false;
+
+const int LOOP_PROC_LIMIT = 1000;
+static int LOOP_COUNT = 0;
+static int PROC_COUNT = 0;
+
+const int READ = 0;
+const int WRITE = 1;
+
+bool looping_okay()
+{
+    return LOOP_COUNT < LOOP_PROC_LIMIT && PROC_COUNT < LOOP_PROC_LIMIT;
+}
 
 char* readline() 
 {   
@@ -170,7 +184,7 @@ command_t *create_command_chain(arg_t *tokenChain)
                 }
                 else if (strcmp(currentToken->arg, APPEND) == 0)
                 {
-                    command->output_mode = O_APPEND;
+                    command->output_mode = O_APPND;
                     command->parse_state = NEED_OUT_PATH;
                 }
                 else if (strcmp(currentToken->arg, INPUT) == 0)
@@ -209,30 +223,198 @@ command_t *create_command_chain(arg_t *tokenChain)
         return firstCommand;
 }
 
+char **generate_argv(arg_t *args)
+{
+    char **argv;
+    int argc = 0;
+    arg_t *arg = args;
+    while (arg != NULL) 
+    {
+        argc++;
+        arg = arg->next;
+    }
+
+    argv = (char **)(malloc(sizeof(char *) * argc + 1 ));
+
+    arg = args;
+    for (int i = 0; i < argc && arg != NULL; i++)
+    {
+        argv[i] = arg->arg;
+        arg = arg->next;
+    }
+
+    argv[argc] = NULL;
+    return argv;
+}
+
+void run_commands(command_t *commandChain)
+{
+    command_t *command = commandChain;
+    
+    int pipes[2] = {-1, -1};
+    
+    // while there are still commands to run
+    while (command != NULL && looping_okay()) 
+    {
+        arg_t *args = command->arg_list;
+        // handle an empty arg command
+        if (args == NULL)
+        {
+            verbose("Skipping empty command\n");
+            command = command->next;
+            continue;
+        }
+        
+        verbose("Starting command execution [%s...]\n", args->arg); 
+        
+        // handle the special "exit" command
+        if (strcmp(args->arg, "exit") == 0)
+        {
+            printf("goodbye!\n");
+            exit(0);
+        }
+        
+        if (command->output_mode == O_PIPE)
+        {
+            // open the pipes
+            pipe(pipes);
+            command->output_fd = pipes[WRITE];
+            command->next->input_fd = pipes[READ];
+        }
+        
+        PROC_COUNT++;
+        pid_t childPid = fork();
+        
+        if (childPid < 0)
+        {
+            fprintf(stderr, "Fork Failed \n");
+            exit(1);
+        }
+        
+        else if (childPid == 0 )
+        {
+            verbose("In child process\n");
+ 
+            // open files if needed, duplicate to stdio
+            if (command->input_mode == I_FILE)
+            {
+                command->input_fd = open(command->input_file, O_RDONLY);
+                if (command->input_fd < 0)
+                {
+                    fprintf(stderr, "Error opening input file %s", command->input_file);
+                    exit(1);
+                }
+                
+                dup2(command->input_fd, 0);
+                close(command->input_fd);
+            }
+            else if (command->output_mode == O_WRITE)
+            {
+                command->output_fd = open(command->output_file, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+            }
+            else if (command->output_mode == O_APPND)
+            {
+                command->output_fd = open(command->output_file, O_WRONLY | O_APPEND | O_CREAT, S_IRWXU);
+            }
+            if (command->output_mode == O_WRITE || command->output_mode == O_APPND)
+            {
+                if (command->output_fd < 0)
+                {
+                    fprintf(stderr, "Error opening output file %s", command->output_file);
+                    exit(1);
+                }
+                
+                dup2(command->output_fd, 1);
+                close(command->output_fd);
+            }
+            
+            // set up pipes if needed
+            if (command->output_mode == O_PIPE)
+            {
+                dup2(command->output_fd, 1);    
+            }
+            else if (command->input_mode == I_PIPE)
+            {
+                dup2(command->input_fd, 0);
+            }
+            if (command->output_mode == O_PIPE || command->input_mode == I_PIPE)
+            {
+                close(pipes[WRITE]);
+                close(pipes[READ]);
+                pipes[WRITE] = -1;
+                pipes[READ] = -1;
+            }
+ 
+            // set up argvs    
+            char **argv = generate_argv(args);
+            
+            // exec!
+            execvp(*argv, argv);
+            
+            fprintf(stderr, "Exec Failed \n");
+            exit(1);
+        }
+        else 
+        {
+            verbose("In parrent process\n");
+    
+            if (pipes[WRITE] > 0)
+            {
+                close(pipes[WRITE]);
+                pipes[WRITE] = -1;
+            }
+            
+    
+            int status;
+            if (command->output_mode != O_PIPE)
+            {
+                while (PROC_COUNT > 0)
+                {
+                    wait(&status);
+                    PROC_COUNT--;
+                }
+                
+                int exitStatus = WEXITSTATUS(status);
+                
+                if ((command->next_command_exec_on == NEXT_ON_SUCCESS && exitStatus == 0) ||
+                        (command->next_command_exec_on == NEXT_ON_FAIL && exitStatus != 0))
+                {
+                    command = NULL;
+                    break;
+                }
+            }
+        }
+        
+        command = command->next;
+        LOOP_COUNT++;
+    }
+    
+    verbose("Finished execution of all commands\n");
+}
+
 int main(int argc, char **argv)
 {
     if (argc > 1) 
     {
-        ISVERBOSE = strcmp(argv[1], "-v") == 0;
+        IS_VERBOSE = strcmp(argv[1], "-v") == 0;
     }
     verbose("\n\nVERBOSE MODE! GET EXCITED!\n\n");
     
-    const limit = 1000;
-    int loopCount = 0;
-    int threadCount = 0;
-    
-    // This is a safeguard for errant looping or threads.
-    while (loopCount < limit && threadCount < 1000) 
+    // This is a safeguard for errant looping or process creation.
+    while (looping_okay()) 
     {
         printf("osh> ");
         
         char *line = readline();     
         arg_t *tokenChain = parse_tokens(line);
-        command_t *commandChain = create_command_chain(tokenChain);
+        command_t *command = create_command_chain(tokenChain);
+        run_commands(command);
+        
+
     }
     
     // This is if we reach the loop or thread limits. sad time.
-    printf("Thread or loop limit reached. Congrats.\n");
+    fprintf(stderr, "Thread or loop limit reached. Congrats.\n");
     return 1;
 }
 
