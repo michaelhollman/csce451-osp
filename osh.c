@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <fcntl.h>
+#include <sys/wait.h>
 
 #include "command.h"
 #include "operators.h"
