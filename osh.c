@@ -119,15 +119,9 @@ command_t *create_command_chain(arg_t *tokenChain)
             }
             if ((command->parse_state == NEED_IN_PATH) || (command->parse_state == NEED_OUT_PATH))
             {
-                command->parse_state = NEED_END;
                 lastToken = NULL;
                 currentToken = currentToken->next;
                 continue;
-            }
-            
-            if (command->parse_state == NEED_END && !is_terminating_operator(currentToken->arg))
-            {
-                verbose("AAACK! An extra token. I have no idea what to do! I'm probably going to die now.\n");
             }
              
             if (is_terminating_operator(currentToken->arg))
@@ -144,19 +138,19 @@ command_t *create_command_chain(arg_t *tokenChain)
                 
                 // determine how it ended
                 bool endedWithPipe = false;
-                if (strcmp(currentToken->arg, ON_SUCCESS) == 0)
+                if (strcmp(currentToken->arg, OP_ON_SUCCESS) == 0)
                 {
                     command->next_command_exec_on = NEXT_ON_SUCCESS;
                 }
-                else if (strcmp(currentToken->arg, ON_FAIL) == 0)
+                else if (strcmp(currentToken->arg, OP_ON_FAIL) == 0)
                 {
                     command->next_command_exec_on = NEXT_ON_FAIL;   
                 }
-                else if (strcmp(currentToken->arg, ON_ANY) == 0)
+                else if (strcmp(currentToken->arg, OP_ON_ANY) == 0)
                 {
                     command->next_command_exec_on = NEXT_ON_ANY;                       
                 }
-                else if (strcmp(currentToken->arg, PIPE) == 0)
+                else if (strcmp(currentToken->arg, OP_PIPE) == 0)
                 {
                     command->output_mode = O_PIPE;
                     endedWithPipe = true;
@@ -180,19 +174,19 @@ command_t *create_command_chain(arg_t *tokenChain)
             {
                 verbose("    Found file operator [%s]\n", currentToken->arg);
                 
-                if (strcmp(currentToken->arg, OUTPUT) == 0)
+                if (strcmp(currentToken->arg, OP_OUTPUT) == 0)
                 {
                     command->output_mode = O_WRITE;
                     command->parse_state = NEED_OUT_PATH;
                 }
-                else if (strcmp(currentToken->arg, APPEND) == 0)
+                else if (strcmp(currentToken->arg, OP_APPEND) == 0)
                 {
                     command->output_mode = O_APPND;
                     command->parse_state = NEED_OUT_PATH;
                 }
-                else if (strcmp(currentToken->arg, INPUT) == 0)
+                else if (strcmp(currentToken->arg, OP_INPUT) == 0)
                 {
-                    command->output_mode = I_FILE;
+                    command->input_mode = I_FILE;
                     command->parse_state = NEED_IN_PATH;
                 }
                 
@@ -304,14 +298,15 @@ void run_commands(command_t *commandChain)
                 command->input_fd = open(command->input_file, O_RDONLY);
                 if (command->input_fd < 0)
                 {
-                    fprintf(stderr, "Error opening input file %s", command->input_file);
+                    fprintf(stderr, "Error opening input file %s\n", command->input_file);
                     exit(1);
                 }
                 
                 dup2(command->input_fd, 0);
                 close(command->input_fd);
             }
-            else if (command->output_mode == O_WRITE)
+           
+            if (command->output_mode == O_WRITE)
             {
                 command->output_fd = open(command->output_file, O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
             }
@@ -323,7 +318,7 @@ void run_commands(command_t *commandChain)
             {
                 if (command->output_fd < 0)
                 {
-                    fprintf(stderr, "Error opening output file %s", command->output_file);
+                    fprintf(stderr, "Error opening output file %s\n", command->output_file);
                     exit(1);
                 }
                 

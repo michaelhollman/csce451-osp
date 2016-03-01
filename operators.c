@@ -5,7 +5,7 @@
 
 int is_file_operator(char* str) 
 {
-    const char* const fileop[3] = { OUTPUT, INPUT, APPEND };     
+    const char* const fileop[3] = { OP_OUTPUT, OP_INPUT, OP_APPEND };     
     for (int i = 0; i < 3; i++) 
     {
         if (strcmp(str, fileop[i]) == 0) return true;
@@ -15,7 +15,7 @@ int is_file_operator(char* str)
 
 int is_terminating_operator(char* str) 
 {
-    const char* const terminating[4] = { PIPE, ON_SUCCESS, ON_FAIL, ON_ANY };
+    const char* const terminating[4] = { OP_PIPE, OP_ON_SUCCESS, OP_ON_FAIL, OP_ON_ANY };
     for (int i = 0; i < 4; i++) 
     {
         if (strcmp(str, terminating[i]) == 0) return true;
