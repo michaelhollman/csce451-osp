@@ -192,9 +192,12 @@ command_t *create_command_chain(arg_t *tokenChain)
                 }
                 
                 // break off chain
-                command->last_arg = lastToken;
-                command->last_arg->next = NULL;
-                lastToken = NULL;
+                if (command->last_arg == NULL && lastToken != NULL)
+                {
+                    command->last_arg = lastToken;
+                    command->last_arg->next = NULL;
+                    lastToken = NULL; 
+                }
                 
                 currentToken = currentToken->next;
                 continue;
@@ -363,7 +366,6 @@ void run_commands(command_t *commandChain)
                 pipes[WRITE] = -1;
             }
             
-    
             int status;
             if (command->output_mode != O_PIPE)
             {
@@ -375,8 +377,8 @@ void run_commands(command_t *commandChain)
                 
                 int exitStatus = WEXITSTATUS(status);
                 
-                if ((command->next_command_exec_on == NEXT_ON_SUCCESS && exitStatus == 0) ||
-                        (command->next_command_exec_on == NEXT_ON_FAIL && exitStatus != 0))
+                if ((command->next_command_exec_on == NEXT_ON_SUCCESS && exitStatus != 0) ||
+                    (command->next_command_exec_on == NEXT_ON_FAIL && exitStatus == 0))
                 {
                     command = NULL;
                     break;
