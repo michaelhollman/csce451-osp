@@ -1,5 +1,7 @@
-#ifndef	DEFS_H
-#define DEFS_H
+// Adapted from the provided comm.h
+
+#ifndef	_comm_h_
+#define _comm_h_
 
 /*
  * Input Modes
@@ -34,30 +36,30 @@ extern int cerror;
 
 
 /* A C sytle linked list to parse and build the argv structure */
-typedef struct ArgX{
+typedef struct arg_t {
         char *arg;
-        struct ArgX *next;
-} Arg;
+        struct arg_t *next;
+} arg_t;
 
 
 /* A C sytle linked list to parse the input line */
-typedef struct CommandX{
-        int  parse_state;
+typedef struct command_t {
+        int parse_state;
 
-        Arg  *arg_list;
-        Arg  *last_arg;
+        struct arg_t *arg_list;
+        struct arg_t *last_arg;
 
         char *input_file;
-        int  input_mode;
-        int  input_fd;
+        int input_mode;
+        int input_fd;
 
         char *output_file;
-        int  output_mode;
-        int  output_fd;
+        int output_mode;
+        int output_fd;
 
-        int  next_command_exec_on;
+        int next_command_exec_on;
         pid_t pid;
-        struct CommandX *next;
-} Command;
+        struct command_t *next;
+} command_t;
 
 #endif
