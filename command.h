@@ -32,7 +32,6 @@
 #define NEED_NEW_COMMAND 1
 #define NEED_IN_PATH 2
 #define NEED_OUT_PATH 3
-#define NEED_END 4
 
 extern int cerror;
 
