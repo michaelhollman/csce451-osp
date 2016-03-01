@@ -13,7 +13,7 @@
  * Output Modes
  */
 #define O_WRITE        1
-#define O_APPND        2
+#define O_APPEND       2
 #define O_PIPE         3 
 
 /*
@@ -27,10 +27,12 @@
 /*
  * Parse State 
  */
+#define ERROR_STATE -1
 #define NEED_ANY_TOKEN 0
 #define NEED_NEW_COMMAND 1
 #define NEED_IN_PATH 2
 #define NEED_OUT_PATH 3
+#define NEED_END 4
 
 extern int cerror;
 

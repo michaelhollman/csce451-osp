@@ -9,7 +9,7 @@ static const char ON_SUCCESS[] = "&&";
 static const char ON_FAIL[] = "||";
 static const char ON_ANY[] = ";";
 
-int is_operator(char* str);
+int is_file_operator(char* str);
 int is_terminating_operator(char *str);
 
 #endif

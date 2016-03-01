@@ -3,12 +3,12 @@
 
 #include "operators.h"
 
-int is_operator(char* str) 
+int is_file_operator(char* str) 
 {
-    const char* const any[7] = { OUTPUT, INPUT, APPEND, PIPE, ON_SUCCESS, ON_FAIL, ON_ANY };     
-    for (int i = 0; i < 7; i++) 
+    const char* const fileop[3] = { OUTPUT, INPUT, APPEND };     
+    for (int i = 0; i < 3; i++) 
     {
-        if (strcmp(str, any[i]) == 0) return true;
+        if (strcmp(str, fileop[i]) == 0) return true;
     }
     return false;
 }
