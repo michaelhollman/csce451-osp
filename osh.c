@@ -121,6 +121,7 @@ command_t *create_command_chain(arg_t *tokenChain)
             {
                 lastToken = NULL;
                 currentToken = currentToken->next;
+                command->parse_state = NEED_ANY_TOKEN;
                 continue;
             }
              
