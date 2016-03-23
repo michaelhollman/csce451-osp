@@ -5,7 +5,6 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <fcntl.h>
-#include <sys\stat.h>
 
 #include "monitor.h"
 

@@ -5,7 +5,6 @@
 #include <pthread.h>
 #include <semaphore.h>
 #include <fcntl.h>
-#include <sys\stat.h>
 
 // 10 million (which is ridiculous)
 #define BUFFER_SIZE 10000000
