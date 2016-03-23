@@ -134,14 +134,14 @@ int main(int argc, char **argv)
     pthread_t producers[NUM_PRO_CON_THREADS];
     for (int i = 0; i < NUM_PRO_CON_THREADS; i++)
     {
-        pthread_create(&producers[i], NULL, producer_thread, (void *)(uintptr_t)i);
+        pthread_create(&producers[i], NULL, producer_thread, (void *)i);
     }
     
     // create and start consumers
     pthread_t consumers[NUM_PRO_CON_THREADS];
     for (int i = 0; i < NUM_PRO_CON_THREADS; i++)
     {
-        pthread_create(&consumers[i], NULL, consumer_thread, (void *)(uintptr_t)i);
+        pthread_create(&consumers[i], NULL, consumer_thread, (void *)i);
     }
     
     // allow prod/cons to enter critical sections
