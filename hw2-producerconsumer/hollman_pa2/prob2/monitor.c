@@ -10,6 +10,11 @@
 
 // 10 million (which is ridiculous)
 #define BUFFER_SIZE 10000000
+
+#ifndef SEM_VALUE_MAX
+#define SEM_VALUE_MAX BUFFER_SIZE
+#endif
+
 // it's possible for the maximum semaphore size to be smaller than our buffer
 #define BUFFER_SEM_SIZE SEM_VALUE_MAX < BUFFER_SIZE ? SEM_VALUE_MAX : BUFFER_SIZE
 
