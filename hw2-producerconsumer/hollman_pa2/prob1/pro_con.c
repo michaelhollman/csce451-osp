@@ -4,6 +4,8 @@
 #include <string.h>
 #include <pthread.h>
 #include <semaphore.h>
+#include <fcntl.h>
+#include <sys\stat.h>
 
 // 10 million (which is ridiculous)
 #define BUFFER_SIZE 10000000
@@ -56,7 +58,7 @@ void *producer_thread(void *producerId)
         buffer_in++;
         buffer_in %= BUFFER_SIZE;        
         
-        // terminating condition
+        // terminating condition from argvs
         if (insert_limit > 0 && ++insert_count >= insert_limit)
         {
             verbose("Insertion limit reached for early termination\n");
