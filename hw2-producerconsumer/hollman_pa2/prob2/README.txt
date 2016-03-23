@@ -11,7 +11,7 @@ nuid: 86987337
 --- BUILDING ---
 
 The solution to this problem includes a makefile. Simply execute `make` to
-compile pro_con.c into an executable file called "pro_con".
+compile pro_con.c and monitor.c/.h into an executable file called "pro_con".
 
 
 
@@ -19,15 +19,9 @@ compile pro_con.c into an executable file called "pro_con".
 
 To run the program, simply run the pro_con executable.
 
-For every character inserted into the buffer by a producer and every character
-read from the buffer by a consumer, a message will be printed to stdout.
-The message will follow the format:
-    "[Producer|Consumer] (ID): 'CHAR' [->|<-] [IDX]"
-        - Producer|Consumer - if the action was from a producer or a consumer
-        - ID                  - a pseudo-id of the producer or consumer thread
-        - CHAR                - the character inserted or removed
-        - ->|<-               - the direction of dataflow (in or out of buffer)
-        - IDX                 - the index in the buffer
+The monitor will output insertions and removals into the buffer. To validate that
+it is working correctly, you can compare the values between their insertion and
+removal.
 
 The program will continue running until it is forcibly interrupted, e.g. SIGINT
 (ctrl+c) or SIGTSTP (ctrl+z) is sent to the process.
@@ -50,10 +44,4 @@ what is happening in the code:
         
 --- NOTES, THOUGHTS, & LEARNINGS ---
 
-- I spent most of my development efforts for this assignment in an OS X 
-  environment, which does not have full support for POSIX semaphores. This is
-  why I used sem_open instead of sem_init and had to account for SEM_VALUE_MAX
-  being much smaller than our buffer size of 10 million.
-- The original assignment didn't give much specification on how the buffer
-  should behave. I opted to use a cyclical, array-based buffer, which allows for
-  the program to run infinitely.
+- I used a signal & wait approach to my monitor implemenation.

@@ -5,28 +5,15 @@
 #include <pthread.h>
 #include <semaphore.h>
 
-// 10 million (which is ridiculous)
-#define BUFFER_SIZE 10000000
-// it's possible for the maximum semaphore size to be smaller than our buffer
-#define BUFFER_SEM_SIZE SEM_VALUE_MAX < BUFFER_SIZE ? SEM_VALUE_MAX : BUFFER_SIZE
-#define NUM_PRO_CON_THREADS 4
+#include "monitor.h"
+
+#define NUM_PRO_CON_THREADS 10
 
 #define verbose(...) if(IS_VERBOSE) { fprintf(stdout, __VA_ARGS__); fflush(stdout); }
 bool IS_VERBOSE = false;
 
 int insert_limit = -1;
 int insert_count = 0;
-
-sem_t *mutex;
-sem_t *empty;
-sem_t *full;
-
-// circular array-based character buffer
-static char buffer[BUFFER_SIZE];
-// buffer index that should be used for next input/write
-static int buffer_in;
-// buffer index that should be used for next output/read
-static int buffer_out;
 
 // helper method to generate a random alpha character
 char get_rand_char()
@@ -44,28 +31,9 @@ void *producer_thread(void *producerId)
     int id = (int)producerId;
     while (true)
     {
-        sem_wait(empty);
-        sem_wait(mutex);
-        verbose("enter crit\n");
-
-        char rc = get_rand_char();
-        buffer[buffer_in] = rc;
-        
-        printf("Producer (%02d): '%c' -> [%d]\n", id, rc, buffer_in);
-        
-        buffer_in++;
-        buffer_in %= BUFFER_SIZE;        
-        
-        // terminating condition
-        if (insert_limit > 0 && ++insert_count >= insert_limit)
-        {
-            verbose("Insertion limit reached for early termination\n");
-            exit(0);
-        }
-        
-        verbose("exit crit\n");        
-        sem_post(mutex); 
-        sem_post(full);       
+        char alpha = get_rand_char();
+        mon_insert(alpha);
+        verbose("Producer (%02d): '%c'\n", id, alpha);
     } 
 }
 
@@ -75,21 +43,15 @@ void *consumer_thread(void *consumerId)
     int id = (int)consumerId;
     while (true)
     {
-        sem_wait(full);
-        sem_wait(mutex);
-        verbose("enter crit\n");
-
-        char rc = buffer[buffer_out];
-        buffer[buffer_out] = '\0';
+        char alpha = mon_remove();
+        verbose("Consumer (%02d): '%c'\n", id, alpha);
         
-        printf("Consumer (%02d): '%c' <- [%d]\n", id, rc, buffer_out);
-        
-        buffer_out++;
-        buffer_out %= BUFFER_SIZE;        
-        
-        verbose("exit crit\n");        
-        sem_post(mutex); 
-        sem_post(empty);
+        // terminating condition from argvs
+        if (insert_limit > 0 && ++insert_count >= insert_limit)
+        {
+            verbose("Insertion limit reached for early termination\n");
+            exit(0);
+        }
     }       
 }
 
@@ -106,24 +68,8 @@ int main(int argc, char **argv)
         }   
     }
     
-    // initialize and set up buffer, semaphores, etc.
-    sem_unlink("/_procon_mutex");
-    sem_unlink("/_procon_empty");
-    sem_unlink("/_procon_full");
-    mutex = sem_open("/_procon_mutex", O_CREAT, (S_IRUSR | S_IWUSR), 0);
-    empty = sem_open("/_procon_empty", O_CREAT, (S_IRUSR | S_IWUSR), BUFFER_SEM_SIZE);
-    full  = sem_open("/_procon_full",  O_CREAT, (S_IRUSR | S_IWUSR), 0);
-    
-    
-    if (mutex == SEM_FAILED || empty == SEM_FAILED || full == SEM_FAILED)
-    {
-        printf("sem_open failed\n");
-        exit(-1);
-    }
-    
-    buffer_in = 0;
-    buffer_out = 0;
-        
+    mon_init();
+      
     // create and start producers
     pthread_t producers[NUM_PRO_CON_THREADS];
     for (int i = 0; i < NUM_PRO_CON_THREADS; i++)
@@ -137,9 +83,6 @@ int main(int argc, char **argv)
     {
         pthread_create(&consumers[i], NULL, consumer_thread, (void *)(uintptr_t)i);
     }
-    
-    // allow prod/cons to enter critical sections
-    sem_post(mutex);
-    
+
     pthread_exit(NULL);
 }

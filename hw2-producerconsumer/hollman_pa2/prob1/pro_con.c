@@ -114,7 +114,6 @@ int main(int argc, char **argv)
     empty = sem_open("/_procon_empty", O_CREAT, (S_IRUSR | S_IWUSR), BUFFER_SEM_SIZE);
     full  = sem_open("/_procon_full",  O_CREAT, (S_IRUSR | S_IWUSR), 0);
     
-    
     if (mutex == SEM_FAILED || empty == SEM_FAILED || full == SEM_FAILED)
     {
         printf("sem_open failed\n");
