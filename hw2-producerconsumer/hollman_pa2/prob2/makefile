@@ -3,6 +3,6 @@ SOURCES = $(wildcard *.c)
 
 default: pro_con
 
-pro_con: pro_con.c $(HEADERS); gcc -o pro_con $(SOURCES) -lm -std=c99
+pro_con: pro_con.c $(HEADERS); gcc -pthread -o pro_con $(SOURCES) -lm -std=c99
 
 clean:;-rm pro_con;
