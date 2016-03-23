@@ -48,7 +48,7 @@ char get_rand_char()
 // method used for producer pthread initialization
 void *producer_thread(void *producerId)
 {
-    int id = (int)producerId;
+    int id = (int)(unsigned long long)producerId;
     while (true)
     {
         sem_wait(empty);
@@ -79,7 +79,7 @@ void *producer_thread(void *producerId)
 // method used for consumer pthread initialization
 void *consumer_thread(void *consumerId)
 {
-    int id = (int)consumerId;
+    int id = (int)(unsigned long long)consumerId;
     while (true)
     {
         sem_wait(full);
@@ -134,14 +134,14 @@ int main(int argc, char **argv)
     pthread_t producers[NUM_PRO_CON_THREADS];
     for (int i = 0; i < NUM_PRO_CON_THREADS; i++)
     {
-        pthread_create(&producers[i], NULL, producer_thread, (void *)i);
+        pthread_create(&producers[i], NULL, producer_thread, (void *)(unsigned long long)i);
     }
     
     // create and start consumers
     pthread_t consumers[NUM_PRO_CON_THREADS];
     for (int i = 0; i < NUM_PRO_CON_THREADS; i++)
     {
-        pthread_create(&consumers[i], NULL, consumer_thread, (void *)i);
+        pthread_create(&consumers[i], NULL, consumer_thread, (void *)(unsigned long long)i);
     }
     
     // allow prod/cons to enter critical sections
