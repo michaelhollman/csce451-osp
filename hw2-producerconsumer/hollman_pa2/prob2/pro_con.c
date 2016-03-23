@@ -29,7 +29,7 @@ char get_rand_char()
 // method used for producer pthread initialization
 void *producer_thread(void *producerId)
 {
-    int id = *(int *)producerId;
+    int id = (int)producerId;
     while (true)
     {
         char alpha = get_rand_char();
@@ -41,7 +41,7 @@ void *producer_thread(void *producerId)
 // method used for consumer pthread initialization
 void *consumer_thread(void *consumerId)
 {
-    int id = *(int *)consumerId;
+    int id = (int)consumerId;
     while (true)
     {
         char alpha = mon_remove();
