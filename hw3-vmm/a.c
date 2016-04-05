@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdint.h>
 
+#define FRAME_COUNT 256
 #define PAGE_SIZE 256
 #define TLB_SIZE 16
 #define MISS_OR_FAULT -1
@@ -14,7 +15,7 @@ int main(int argc, char **argv)
     char *backing_store_file_name;
     char *addresses_file_name;
     
-    // handle arguments
+    // process arguments
     if (argc != 3)
     {
         printf("Exactly 2 arguments must be provided.\n");
@@ -33,8 +34,8 @@ int main(int argc, char **argv)
     int stats_page_fault_count = 0;
     int stats_tlb_hit_count = 0;
     
-    // the actual chunk of memory that we'll load data into, 256 frames of 256 bytes
-    char physical_memory[65536];
+    // the actual chunk of memory that we'll load data into
+    char physical_memory[FRAME_COUNT * PAGE_SIZE];
     
     // a counter to keep track of the next frame that should be used
     int physical_memory_next_frame = 0;
@@ -92,6 +93,8 @@ int main(int argc, char **argv)
         // parse logical address into page and offset
         int32_t page_number = (address_raw & 0x0000ff00) >> 8;
         int32_t offset = address_raw & 0x000000ff;
+        
+        // start working on figuring out the frame number in physical_memory
         int32_t frame_number = MISS_OR_FAULT;
         
         // check TLB (linearly)
@@ -118,13 +121,13 @@ int main(int argc, char **argv)
             }            
         }
         
-        // if the page table faulted, load new page into memory
+        // if the page table faulted, load the page into the next frame in physical_memory
         if (frame_number == MISS_OR_FAULT)
         {
             // seek to the correct location in backing_store_file_p
             int long seek_offset = page_number * PAGE_SIZE;
             int seek_result = fseek(backing_store_file_p, seek_offset, SEEK_SET);
-            // sanity check… this is c after all
+            // sanity check…
             if (seek_result != 0) 
             {
                 printf("Error seeking within backing store file.");
@@ -133,11 +136,21 @@ int main(int argc, char **argv)
                 exit(1);
             }
             
-            // read the data straight into where we want it
             frame_number = physical_memory_next_frame++;
+            // this is just a sanity check. in the current use case, we know that the physical memory
+            // is for sure the same size as our virtual address space
+            if (frame_number > FRAME_COUNT) 
+            {
+                printf("Error: Trying to use a frame beyond the number of frames.");
+                fclose(addresses_file_p);
+                fclose(backing_store_file_p);
+                exit(1);
+            }
+            
+            // read the data straight into where we want it in physical_memory
             fread(&physical_memory[frame_number * PAGE_SIZE], sizeof(char), PAGE_SIZE, backing_store_file_p);
             
-            // update page table
+            // update page table with the new frame
             page_table[page_number] = frame_number;
         }
         
@@ -150,7 +163,7 @@ int main(int argc, char **argv)
             tlb_next_idx %= TLB_SIZE;   
         }
         
-        // reconstruct address
+        // reconstruct address into physical address
         int32_t address_translated = (frame_number << 8) | offset;
         
         // read value at memory location
@@ -172,4 +185,6 @@ int main(int argc, char **argv)
     // cleanup
     fclose(addresses_file_p);
     fclose(backing_store_file_p);
+    fflush(stdout);
+    fflush(stderr);
 }
