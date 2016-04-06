@@ -7,6 +7,12 @@ nuid: 86987337
 
 --------------------------------------------------------------------------------
 
+--- FILES INCLUDED IN SUBMISSION ---
+
+- README.txt - this readme
+- a.c        - the program source
+- makefile   - a makefile to help compile the program
+
 --- COMPILING ---
 
 The solution to this problem includes a makefile. Simply execute `make` to
