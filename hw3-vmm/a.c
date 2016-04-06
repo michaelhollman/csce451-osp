@@ -49,7 +49,7 @@ int main(int argc, char **argv)
         tlb[i][0] = MISS_OR_FAULT;
     }
     
-    // used to cycle through tlb indices to accomplish a FIFO update policy
+    // used to cycle through tlb indices, accomplishes a FIFO update policy
     int tlb_next_idx = 0;
     
     // the page table, just a simple map from page number to frame number
