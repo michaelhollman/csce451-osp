@@ -60,8 +60,14 @@ the provided test program and correct.txt.
   in a way that allowed for instantaneous (or at least better-than-linear) 
   lookup complexity.
   
- - We did not have to complete the modification portion of the assignment (which
-   consisted of adjusting the program to use less physical memory than the size
-   of the virtual address space). Within my code, I make a comment where my code
-   would need to handle the case where there were no empty frames to place a
-   freshly-loaded page into.
+- We did not have to complete the modification portion of the assignment (which
+  consisted of adjusting the program to use less physical memory than the size
+  of the virtual address space). Within my code, I make a comment where my code
+  would need to handle the case where there were no empty frames to place a
+  freshly-loaded page into.
+   
+- While completing this assignment, I better learned about how virtual memory
+  actually works. I've always had a good grasp of how it works conceptually, but
+  this assignment finally taught me how it actually works. I also re-learned how
+  fun it can be to directly play with memory using c (especially when you don't
+  have to dig yourself into a hole with malloc/free).
