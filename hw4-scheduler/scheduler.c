@@ -32,10 +32,7 @@ static void wait_for_queue();
  */
 void update_run_time(thread_info_t *info) {
 	// pretty straight forware update of timer
-	if (clock_gettime(CLOCK_REALTIME, &info->suspend_time) == -1)
-	{
-		perror("Error in update_run_time");
-	}	
+	clock_gettime(CLOCK_REALTIME, &info->suspend_time);
 	info->run_time += time_difference(&info->suspend_time, &info->resume_time);
 }
 
@@ -45,10 +42,7 @@ void update_run_time(thread_info_t *info) {
  */
 void update_wait_time(thread_info_t *info) {
 	// pretty straight forward tmer update
-	if (clock_gettime(CLOCK_REALTIME, &info->resume_time) == -1)
-	{
-		perror("Error in update_wait_time");
-	}
+	clock_gettime(CLOCK_REALTIME, &info->resume_time);
 	info->wait_time += time_difference(&info->resume_time, &info->suspend_time);
 }
 
@@ -212,14 +206,14 @@ void setup_sig_handlers() {
 	/* Setup cancel handler for SIGTERM signal in workers */
 	struct sigaction sigterm_action;
 	sigterm_action.sa_flags = SA_SIGINFO;
-	sigterm_action.sa_sigaction = timer_handler;
+	sigterm_action.sa_sigaction = cancel_thread;
 	sigemptyset(&sigterm_action.sa_mask);
 	sigaction(SIGTERM, &sigterm_action, NULL);
 
 	/* Setup suspend handler for SIGUSR1 signal in workers */
 	struct sigaction sigusr_action;
 	sigusr_action.sa_flags = SA_SIGINFO;
-	sigusr_action.sa_sigaction = timer_handler;
+	sigusr_action.sa_sigaction = suspend_thread;
 	sigemptyset(&sigusr_action.sa_mask);
 	sigaction(SIGUSR1, &sigusr_action, NULL);
 }
@@ -289,8 +283,6 @@ static void create_workers(int thread_count, int *quanta)
 		/* initialize the time variables for each thread for performance evalution*/
 		clock_gettime(CLOCK_REALTIME, &info->suspend_time); 
 		clock_gettime(CLOCK_REALTIME, &info->resume_time);
-		info->wait_time = 0;
-		info->run_time = 0;
 	}
 }
 
