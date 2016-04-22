@@ -142,10 +142,8 @@ static void suspend_worker(thread_info_t *info)
  		usr1_action.sa_flags = SA_SIGINFO;
 		usr1_action.sa_sigaction = suspend_thread;
         	
-		if (sigemptyset(&usr1_action.sa_mask) != 0 || sigaction(SIGUSR1, &usr1_action, NULL) == -1)
-		{
-			perror("Error updating SIGUSR1 (suspend_worker)");
-		}
+		sigemptyset(&usr1_action.sa_mask)
+		sigaction(SIGUSR1, &usr1_action, NULL)
 
 	    /* Update Schedule queue */
 	    list_remove(&sched_queue,info->le);
@@ -208,28 +206,22 @@ void setup_sig_handlers() {
 	struct sigaction sigalrm_acttion;
 	sigalrm_acttion.sa_flags = SA_SIGINFO;
 	sigalrm_acttion.sa_sigaction = timer_handler;
-	if (sigemptyset(&sigalrm_acttion.sa_mask) != 0 || sigaction(SIGALRM, &sigalrm_acttion, NULL) == -1)
-	{
-		perror("error setting up SIGALRM in setup_sig_handlers");
-	}
+	sigemptyset(&sigalrm_acttion.sa_mask)
+	sigaction(SIGALRM, &sigalrm_acttion, NULL)
 
 	/* Setup cancel handler for SIGTERM signal in workers */
 	struct sigaction sigterm_acttion;
 	sigterm_acttion.sa_flags = SA_SIGINFO;
 	sigterm_acttion.sa_sigaction = timer_handler;
-	if (sigemptyset(&sigterm_acttion.sa_mask) != 0 || sigaction(SIGTERM, &sigterm_acttion, NULL) == -1)
-	{
-		perror("error setting up SIGTERM in setup_sig_handlers");
-	}
+	sigemptyset(&sigterm_acttion.sa_mask)
+	sigaction(SIGTERM, &sigterm_acttion, NULL)
 
 	/* Setup suspend handler for SIGUSR1 signal in workers */
 	struct sigaction sigusr_acttion;
 	sigusr_acttion.sa_flags = SA_SIGINFO;
 	sigusr_acttion.sa_sigaction = timer_handler;
-	if (sigemptyset(&sigusr_acttion.sa_mask) != 0 || sigaction(SIGUSR1, &sigusr_acttion, NULL) == -1)
-	{
-		perror("error setting up SIGUSR1 in setup_sig_handlers");
-	}
+	sigemptyset(&sigusr_acttion.sa_mask)
+	sigaction(SIGUSR1, &sigusr_acttion, NULL)
 }
 
 /*
@@ -295,11 +287,8 @@ static void create_workers(int thread_count, int *quanta)
 		pthread_detach(info->thrid);
 
 		/* initialize the time variables for each thread for performance evalution*/
-		if (clock_gettime(CLOCK_REALTIME, &info->suspend_time) == -1 || 
-			clock_gettime(CLOCK_REALTIME, &info->resume_time) == -1)
-		{
-			perror("Error initializing timing stats");
-		}
+		clock_gettime(CLOCK_REALTIME, &info->suspend_time) 
+		clock_gettime(CLOCK_REALTIME, &info->resume_time)
 		info->wait_time = 0;
 		info->run_time = 0;
 	}

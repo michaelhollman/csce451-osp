@@ -25,14 +25,11 @@ void suspend_thread()
 	/*wait for a resume signal from the scheduler*/
 	int semaphore;
 	sigset_t mask;
-
-	if (sigemptyset(&mask) != 0 ||
-		sigaddset(&mask, SIGUSR2) != 0 ||
-		pthread_sigmask(SIG_BLOCK, &mask, NULL) != 0 || 
-		sigwait(&mask, &semaphore) != 0)
-	{
-		perror("Error in supsend_thread");
-	}
+	
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGUSR2);
+	// pthread_sigmask(SIG_BLOCK, &mask, NULL);
+	sigwait(&mask, &semaphore);
 	
 	printf("Thread %u: resuming.\n",(unsigned int) pthread_self());
 }
@@ -86,23 +83,17 @@ void *start_worker(void *arg)
 
 	/* Block SIGALRM and SIGUSR2. */
 	sigset_t mask;
-	if (sigemptyset(&mask) != 0 ||
-		sigaddset(&mask, SIGALRM) != 0 ||
-		sigaddset(&mask, SIGUSR2) != 0 ||
-		pthread_sigmask(SIG_BLOCK, &mask, NULL) != 0)
-	{
-		perror("Error in blocking SIGALRM and SIGUSR2 in start_worker");
-	}
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGALRM);
+	sigaddset(&mask, SIGUSR2);
+	pthread_sigmask(SIG_BLOCK, &mask, NULL);
 	 
 	/* Unblock SIGUSR1 and SIGTERM. */
-	if (sigemptyset(&mask) != 0 ||
-		sigaddset(&mask, SIGUSR1) != 0 || 
-		sigaddset(&mask, SIGTERM) != 0 ||
-		pthread_sigmask(SIG_UNBLOCK, &mask, NULL) != 0)
-	{
-		perror("Error in unblocking SIGUSR1 and SIGTERM in start_worker");
-	}
-
+	sigemptyset(&mask);
+	sigaddset(&mask, SIGUSR1); 
+	sigaddset(&mask, SIGTERM);
+	pthread_sigmask(SIG_UNBLOCK, &mask, NULL);
+	
 	/* compete with other threads to enter queue. */
 	if (enter_scheduler_queue(info)) {
 		printf("Thread %lu: failure entering scheduler queue - %s\n", info->thrid, strerror(errno));
