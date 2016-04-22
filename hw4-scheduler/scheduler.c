@@ -210,11 +210,11 @@ void setup_sig_handlers() {
 	sigaction(SIGALRM, &sigalrm_action, NULL);
 
 	/* Setup cancel handler for SIGTERM signal in workers */
-	struct sigaction sigalrm_action;
-	sigalrm_action.sa_flags = SA_SIGINFO;
-	sigalrm_action.sa_sigaction = timer_handler;
-	sigemptyset(&sigalrm_action.sa_mask);
-	sigaction(SIGTERM, &sigalrm_action, NULL);
+	struct sigaction sigterm_action;
+	sigterm_action.sa_flags = SA_SIGINFO;
+	sigterm_action.sa_sigaction = timer_handler;
+	sigemptyset(&sigterm_action.sa_mask);
+	sigaction(SIGTERM, &sigterm_action, NULL);
 
 	/* Setup suspend handler for SIGUSR1 signal in workers */
 	struct sigaction sigusr_action;
