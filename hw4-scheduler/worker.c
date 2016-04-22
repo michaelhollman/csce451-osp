@@ -28,7 +28,7 @@ void suspend_thread()
 	
 	sigemptyset(&mask);
 	sigaddset(&mask, SIGUSR2);
-	// pthread_sigmask(SIG_BLOCK, &mask, NULL);
+	pthread_sigmask(SIG_BLOCK, &mask, NULL);
 	sigwait(&mask, &semaphore);
 	
 	printf("Thread %u: resuming.\n",(unsigned int) pthread_self());
