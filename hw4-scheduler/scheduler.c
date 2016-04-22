@@ -31,6 +31,7 @@ static void wait_for_queue();
  * This function is called every time the thread is suspended.
  */
 void update_run_time(thread_info_t *info) {
+	// pretty straight forware update of timer
 	if (clock_gettime(CLOCK_REALTIME, &info->suspend_time) == -1)
 	{
 		perror("Error in update_run_time");
@@ -43,7 +44,12 @@ void update_run_time(thread_info_t *info) {
  * This function is called every time the thread resumes.
  */
 void update_wait_time(thread_info_t *info) {
-        /* TODO: implement this function */
+	// pretty straight forward tmer update
+	if (clock_gettime(CLOCK_REALTIME, &info->resume_time) == -1)
+	{
+		perror("Error in update_wait_time");
+	}
+	info->wait_time += time_difference(&info->resume_time, &info->suspend_time);
 }
 
 static void init_sched_queue(int queue_size)
@@ -56,7 +62,11 @@ static void init_sched_queue(int queue_size)
 	pthread_mutex_init(&sched_queue.lock, NULL);
 
 	/* initialize the timer */
-	if (timer_create(CLOCK_REALTIME, &sevp, &timer) == -1)
+	struct sigevent sigev;
+	sigev.sigev_notify = SIGEV_SIGNAL;
+	sigev.sigev_signo = SIGALRM;
+	sigev.sigev_value.sival_ptr = &timer;
+	if (timer_create(CLOCK_REALTIME, &sigev, &timer) == -1)
 	{
 		perror("error initializing timer (timer_create)");
 	}
@@ -191,7 +201,6 @@ void timer_handler()
 
 /* 
  * Set up the signal handlers for SIGALRM, SIGUSR1, and SIGTERM.
- * TODO: Implement this function.
  */
 void setup_sig_handlers() {
 
@@ -202,7 +211,6 @@ void setup_sig_handlers() {
 	if (sigemptyset(&sigalrm_acttion.sa_mask) != 0 || sigaction(SIGALRM, &sigalrm_acttion, NULL) == -1)
 	{
 		perror("error setting up SIGALRM in setup_sig_handlers");
-		exit()
 	}
 
 	/* Setup cancel handler for SIGTERM signal in workers */
