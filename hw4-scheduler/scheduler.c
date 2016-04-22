@@ -142,8 +142,8 @@ static void suspend_worker(thread_info_t *info)
  		usr1_action.sa_flags = SA_SIGINFO;
 		usr1_action.sa_sigaction = suspend_thread;
         	
-		sigemptyset(&usr1_action.sa_mask)
-		sigaction(SIGUSR1, &usr1_action, NULL)
+		sigemptyset(&usr1_action.sa_mask);
+		sigaction(SIGUSR1, &usr1_action, NULL);
 
 	    /* Update Schedule queue */
 	    list_remove(&sched_queue,info->le);
@@ -203,25 +203,25 @@ void timer_handler()
 void setup_sig_handlers() {
 
 	/* Setup timer handler for SIGALRM signal in scheduler */
-	struct sigaction sigalrm_acttion;
-	sigalrm_acttion.sa_flags = SA_SIGINFO;
-	sigalrm_acttion.sa_sigaction = timer_handler;
-	sigemptyset(&sigalrm_acttion.sa_mask)
-	sigaction(SIGALRM, &sigalrm_acttion, NULL)
+	struct sigaction sigalrm_action;
+	sigalrm_action.sa_flags = SA_SIGINFO;
+	sigalrm_action.sa_sigaction = timer_handler;
+	sigemptyset(&sigalrm_action.sa_mask);
+	sigaction(SIGALRM, &sigalrm_action, NULL);
 
 	/* Setup cancel handler for SIGTERM signal in workers */
-	struct sigaction sigterm_acttion;
-	sigterm_acttion.sa_flags = SA_SIGINFO;
-	sigterm_acttion.sa_sigaction = timer_handler;
-	sigemptyset(&sigterm_acttion.sa_mask)
-	sigaction(SIGTERM, &sigterm_acttion, NULL)
+	struct sigaction sigalrm_action;
+	sigalrm_action.sa_flags = SA_SIGINFO;
+	sigalrm_action.sa_sigaction = timer_handler;
+	sigemptyset(&sigalrm_action.sa_mask);
+	sigaction(SIGTERM, &sigalrm_action, NULL);
 
 	/* Setup suspend handler for SIGUSR1 signal in workers */
-	struct sigaction sigusr_acttion;
-	sigusr_acttion.sa_flags = SA_SIGINFO;
-	sigusr_acttion.sa_sigaction = timer_handler;
-	sigemptyset(&sigusr_acttion.sa_mask)
-	sigaction(SIGUSR1, &sigusr_acttion, NULL)
+	struct sigaction sigusr_action;
+	sigusr_action.sa_flags = SA_SIGINFO;
+	sigusr_action.sa_sigaction = timer_handler;
+	sigemptyset(&sigusr_action.sa_mask);
+	sigaction(SIGUSR1, &sigusr_action, NULL);
 }
 
 /*
@@ -287,8 +287,8 @@ static void create_workers(int thread_count, int *quanta)
 		pthread_detach(info->thrid);
 
 		/* initialize the time variables for each thread for performance evalution*/
-		clock_gettime(CLOCK_REALTIME, &info->suspend_time) 
-		clock_gettime(CLOCK_REALTIME, &info->resume_time)
+		clock_gettime(CLOCK_REALTIME, &info->suspend_time); 
+		clock_gettime(CLOCK_REALTIME, &info->resume_time);
 		info->wait_time = 0;
 		info->run_time = 0;
 	}
