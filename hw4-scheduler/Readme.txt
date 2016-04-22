@@ -17,30 +17,19 @@ run make to build the program.
 The parameter and procedures for running the program have not been modified
 from the original assignment.
 
---- ISSUES ---
-
-While developing this solution locally, I ran into very few issues. Development
-was extremely smooth and straghtforward. However, when I got to the point of
-running and testing my code on the CSE server, I immediately encountered
-a plethora of issues that stemmed from what seem like bugs in the provided code.
-
-I encountered many errors from memory being double-freed or from the user block
-quota limit being reached. I was unable to adequately research why these issues
-were occurring, which was incredibly discouraging. As I mentioned, local testing
-worked very well, and while there were some minor discrepencies between the
-output I was getting locally and the output from the test program, the behaviors
-still seemed to be correct.
-
-So, ultimately, I cannot guarantee that this will work on the CSE server. I
-believe my implemenation is correct, except for some system-specific quirks that
-seem to manifest themselves in the provided code.
+While developing this solution, I initially feared that I had encountered
+some very obscure system-specific bug in the provided code. Fortunately, I was
+able to determine that I had simply made a typographical error within 
+setup_sig_handlers. After much panic, I am confident in my implementation, and
+it passes all the provided tests.
 
 --- LEARNINGS ---
 
-I found this assignment initially challenging. Due to the issues I ran into that
-I discussed in the prior setion, I found it incredibly difficult to draw
-positively from this assignment. I did learn a lot about how POSIX timing and
-signaling within C between threads works.
+I found this assignment initially challenging, mostly due to the issues I
+mentioned previously that ended up just being a stupid mistake. I did end up 
+learning a lot about how POSIX timing and signaling within C between threads 
+works. While I can't say I necessarily enjoyed working with these APIs and
+libraries, it was at least very interesting.
 
 --- QUESTIONS ---
 
