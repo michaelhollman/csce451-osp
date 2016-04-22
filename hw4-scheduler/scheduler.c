@@ -26,21 +26,16 @@ static int thread_count = 0;
 static void exit_error(int); /* helper function. */
 static void wait_for_queue();
 
-/*******************************************************************************
- *
- * Implement these functions.
- *
- ******************************************************************************/
-/*
- * This function intializes the queue semaphore and the queue itself.
- */
-
 /* 
  * Update the worker's current running time.
  * This function is called every time the thread is suspended.
  */
 void update_run_time(thread_info_t *info) {
-        /* TODO: implement this function */
+	if (clock_gettime(CLOCK_REALTIME, &info->suspend_time) == -1)
+	{
+		perror("Error in update_run_time");
+	}	
+	info->run_time += time_difference(&info->suspend_time, &info->resume_time);
 }
 
 /* 
@@ -51,8 +46,6 @@ void update_wait_time(thread_info_t *info) {
         /* TODO: implement this function */
 }
 
-
-
 static void init_sched_queue(int queue_size)
 {
 	/* set up a semaphore to restrict access to the queue */
@@ -62,7 +55,11 @@ static void init_sched_queue(int queue_size)
 	sched_queue.head = sched_queue.tail = 0;
 	pthread_mutex_init(&sched_queue.lock, NULL);
 
-	/* TODO: initialize the timer */
+	/* initialize the timer */
+	if (timer_create(CLOCK_REALTIME, &sevp, &timer) == -1)
+	{
+		perror("error initializing timer (timer_create)");
+	}
 }
 
 /*
@@ -73,20 +70,26 @@ static void resume_worker(thread_info_t *info)
 	printf("Scheduler: resuming %lu.\n", info->thrid);
 
 	/*
-	 * TODO: signal the worker thread that it can resume 
+	 * signal the worker thread that it can resume 
 	 */
+	if (pthread_kill(info->thrid, SIGUSR2) != 0)
+	{
+		perror("Error resuming worker thread (resume_worker)");
+	}
 
 	/* update the wait time for the thread */
 	update_wait_time(info);
-
 }
 
 /*send a signal to the thread, telling it to kill itself*/
 void cancel_worker(thread_info_t *info)
 {
-
-	/* TODO: send a signal to the thread, telling it to kill itself*/
-
+	/* send a signal to the thread, telling it to kill itself*/
+	if (pthread_kill(info->thrid, SIGTERM) != 0)
+	{
+		perror("Error killing worker thread. (cancel_worker)");
+	}
+	
 	/* Update global wait and run time info */
 	wait_times += info->wait_time;
 	run_times += info->run_time;
@@ -109,28 +112,37 @@ void cancel_worker(thread_info_t *info)
  */
 static void suspend_worker(thread_info_t *info)
 {
-
-        int whatgoeshere = 0;
+	// int whatgoeshere = 0;
 	printf("Scheduler: suspending %lu.\n", info->thrid);
 
 	/*update the run time for the thread*/
 	update_run_time(info);
 
-	/* TODO: Update quanta remaining. */
+	/* Update quanta remaining. */
+	info->quanta = info->quanta - 1;
 
-	/* TODO: decide whether to cancel or suspend thread */
-	if(whatgoeshere) {
-	  /*
-	   * Thread still running: suspend.
-	   * TODO: Signal the worker thread that it should suspend.
-	   */
+	/* decide whether to cancel or suspend thread */
+	if(info->quanta > 0) 
+	{
+		/*
+	    * Thread still running: suspend.
+	    * Signal the worker thread that it should suspend.
+	    */
+	    struct sigaction usr1_action;
+ 		usr1_action.sa_flags = SA_SIGINFO;
+		usr1_action.sa_sigaction = suspend_thread;
+        	
+		if (sigemptyset(&usr1_action.sa_mask) != 0 || sigaction(SIGUSR1, &usr1_action, NULL) == -1)
+		{
+			perror("Error updating SIGUSR1 (suspend_worker)");
+		}
 
-	  /* Update Schedule queue */
-	  list_remove(&sched_queue,info->le);
-	  list_insert_tail(&sched_queue,info->le);
+	    /* Update Schedule queue */
+	    list_remove(&sched_queue,info->le);
+	    list_insert_tail(&sched_queue,info->le);
 	} else {
-	  /* Thread done: cancel */
-	  cancel_worker(info);
+	    /* Thread done: cancel */
+	    cancel_worker(info);
 	}
 }
 
@@ -184,25 +196,39 @@ void timer_handler()
 void setup_sig_handlers() {
 
 	/* Setup timer handler for SIGALRM signal in scheduler */
+	struct sigaction sigalrm_acttion;
+	sigalrm_acttion.sa_flags = SA_SIGINFO;
+	sigalrm_acttion.sa_sigaction = timer_handler;
+	if (sigemptyset(&sigalrm_acttion.sa_mask) != 0 || sigaction(SIGALRM, &sigalrm_acttion, NULL) == -1)
+	{
+		perror("error setting up SIGALRM in setup_sig_handlers");
+		exit()
+	}
 
 	/* Setup cancel handler for SIGTERM signal in workers */
+	struct sigaction sigterm_acttion;
+	sigterm_acttion.sa_flags = SA_SIGINFO;
+	sigterm_acttion.sa_sigaction = timer_handler;
+	if (sigemptyset(&sigterm_acttion.sa_mask) != 0 || sigaction(SIGTERM, &sigterm_acttion, NULL) == -1)
+	{
+		perror("error setting up SIGTERM in setup_sig_handlers");
+	}
 
 	/* Setup suspend handler for SIGUSR1 signal in workers */
-
+	struct sigaction sigusr_acttion;
+	sigusr_acttion.sa_flags = SA_SIGINFO;
+	sigusr_acttion.sa_sigaction = timer_handler;
+	if (sigemptyset(&sigusr_acttion.sa_mask) != 0 || sigaction(SIGUSR1, &sigusr_acttion, NULL) == -1)
+	{
+		perror("error setting up SIGUSR1 in setup_sig_handlers");
+	}
 }
-
-/*******************************************************************************
- *
- * 
- *
- ******************************************************************************/
 
 /*
  * waits until there are workers in the scheduling queue.
  */
 static void wait_for_queue()
 {
-
 	while(!list_size(&sched_queue)) {
 	  printf("Scheduler: waiting for workers.\n");
 	  sched_yield();
@@ -260,8 +286,14 @@ static void create_workers(int thread_count, int *quanta)
 		printf("Main: detaching worker thread %lu.\n", info->thrid);
 		pthread_detach(info->thrid);
 
-		/* TODO: initialize the time variables for each thread for performance evalution*/
-
+		/* initialize the time variables for each thread for performance evalution*/
+		if (clock_gettime(CLOCK_REALTIME, &info->suspend_time) == -1 || 
+			clock_gettime(CLOCK_REALTIME, &info->resume_time) == -1)
+		{
+			perror("Error initializing timing stats");
+		}
+		info->wait_time = 0;
+		info->run_time = 0;
 	}
 }
 
@@ -272,7 +304,16 @@ static void *scheduler_run(void *unused)
 {
 	wait_for_queue();
 
-	/* TODO: start the timer */
+	/* start the timer */
+	struct itimerspec timer_s;
+	timer_s.it_value.tv_sec = QUANTUM;
+	timer_s.it_interval.tv_sec = QUANTUM;
+	timer_s.it_value.tv_nsec = 0;
+	timer_s.it_interval.tv_nsec = 0;
+	if (timer_settime(timer, 0, &timer_s, NULL) == -1)
+	{
+		perror("error starting the timer (scheduler_run)");	
+	}
 
 	/*keep the scheduler thread alive*/
 	while( !quit )

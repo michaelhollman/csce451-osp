@@ -6,13 +6,6 @@
 
 #include "scheduler.h"
 
-
-/*******************************************************************************
- *
- * Implement these functions.
- *
- ******************************************************************************/
-
 /* Handler for SIGTERM signal */
 void cancel_thread()
 { 
@@ -24,21 +17,26 @@ void cancel_thread()
 	pthread_exit(NULL);
 } 
 
-/* TODO: Handle the SIGUSR1 signal */
+/* Handle the SIGUSR1 signal */
 void suspend_thread()
 {   
 	printf("Thread %u: suspending.\n", (unsigned int)pthread_self());
 
-	/*add your code here to wait for a resume signal from the scheduler*/
+	/*wait for a resume signal from the scheduler*/
+	int semaphore;
+	sigset_t mask;
+
+	if (sigemptyset(&mask) != 0 ||
+		sigaddset(&mask, SIGUSR2) != 0 ||
+		pthread_sigmask(SIG_BLOCK, &mask, NULL) != 0 || 
+		sigwait(&mask, &semaphore) != 0)
+	{
+		perror("Error in supsend_thread");
+	}
 	
 	printf("Thread %u: resuming.\n",(unsigned int) pthread_self());
 }
 
-/*******************************************************************************
- *
- * 
- *
- ******************************************************************************/
 /*
  * waits to gain access to the scheduler queue.
  */
@@ -86,10 +84,24 @@ void *start_worker(void *arg)
 	float calc = 0.8;
 	int j = 0;
 
-	/* TODO: Block SIGALRM and SIGUSR2. */
+	/* Block SIGALRM and SIGUSR2. */
+	sigset_t mask;
+	if (sigemptyset(&mask) != 0 ||
+		sigaddset(&mask, SIGALRM) != 0 ||
+		sigaddset(&mask, SIGUSR2) != 0 ||
+		pthread_sigmask(SIG_BLOCK, &mask, NULL) != 0)
+	{
+		perror("Error in blocking SIGALRM and SIGUSR2 in start_worker");
+	}
 	 
-	/* TODO: Unblock SIGUSR1 and SIGTERM. */
-
+	/* Unblock SIGUSR1 and SIGTERM. */
+	if (sigemptyset(&mask) != 0 ||
+		sigaddset(&mask, SIGUSR1) != 0 || 
+		sigaddset(&mask, SIGTERM) != 0 ||
+		pthread_sigmask(SIG_UNBLOCK, &mask, NULL) != 0)
+	{
+		perror("Error in unblocking SIGUSR1 and SIGTERM in start_worker");
+	}
 
 	/* compete with other threads to enter queue. */
 	if (enter_scheduler_queue(info)) {
